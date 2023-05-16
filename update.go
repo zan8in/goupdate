@@ -1,6 +1,6 @@
-// Package update provides tooling to auto-update binary releases
+// package goupdate provides tooling to auto-update binary releases
 // from GitHub based on the user's current version and operating system.
-package update
+package goupdate
 
 import (
 	"fmt"

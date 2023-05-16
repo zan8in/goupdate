@@ -1,4 +1,4 @@
-package update
+package goupdate
 
 import "github.com/pkg/errors"
 
