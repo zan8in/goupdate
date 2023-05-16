@@ -103,12 +103,17 @@ func (m *Manager) InstallTo(path, dir string) error {
 
 // Install binary to replace the current version.
 func (m *Manager) Install(path string) error {
-	bin, err := os.Executable()
+	executablePath, err := os.Executable()
+	if err != nil {
+		return errors.Wrapf(err, "looking up path of %q", m.Command)
+	}
+	absolutePath, err := filepath.Abs(executablePath)
 	if err != nil {
 		return errors.Wrapf(err, "looking up path of %q", m.Command)
 	}
 
-	dir := filepath.Dir(bin)
+	dir := strings.TrimSuffix(absolutePath, "/"+m.Command)
+
 	return m.InstallTo(path, dir)
 }
 
