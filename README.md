@@ -1,11 +1,11 @@
-## go-update
+## goupdate
 
 Package update provides tooling to auto-update binary releases
 from GitHub based on the user's current version and operating system. Used by command-line tools such as [Up](https://github.com/apex/up) and [Apex](https://github.com/apex/apex).
 
 ---
 
-[![GoDoc](https://godoc.org/github.com/zan8in/go-update?status.svg)](https://godoc.org/github.com/zan8in/go-update)
+[![GoDoc](https://godoc.org/github.com/zan8in/goupdate?status.svg)](https://godoc.org/github.com/zan8in/goupdate)
 ![](https://img.shields.io/badge/license-MIT-blue.svg)
 ![](https://img.shields.io/badge/status-stable-green.svg)
 

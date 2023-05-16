@@ -7,9 +7,9 @@ import (
 	"github.com/apex/log"
 	"github.com/kierdavis/ansi"
 
-	"github.com/zan8in/go-update"
-	"github.com/zan8in/go-update/progress"
-	"github.com/zan8in/go-update/stores/github"
+	update "github.com/zan8in/goupdate"
+	"github.com/zan8in/goupdate/progress"
+	"github.com/zan8in/goupdate/stores/github"
 )
 
 func init() {

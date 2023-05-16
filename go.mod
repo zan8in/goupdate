@@ -1,4 +1,4 @@
-module github.com/zan8in/go-update
+module github.com/zan8in/goupdate
 
 go 1.16
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/zan8in/go-update"
+	update "github.com/zan8in/goupdate"
 )
 
 // Store is the store implementation.

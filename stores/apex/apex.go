@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/tj/go/http/request"
-	"github.com/zan8in/go-update"
+	update "github.com/zan8in/goupdate"
 )
 
 // Store is the store implementation.
