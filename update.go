@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -103,17 +104,12 @@ func (m *Manager) InstallTo(path, dir string) error {
 
 // Install binary to replace the current version.
 func (m *Manager) Install(path string) error {
-	executablePath, err := os.Executable()
-	if err != nil {
-		return errors.Wrapf(err, "looking up path of %q", m.Command)
-	}
-	absolutePath, err := filepath.Abs(executablePath)
+	bin, err := exec.LookPath("./" + m.Command)
 	if err != nil {
 		return errors.Wrapf(err, "looking up path of %q", m.Command)
 	}
 
-	dir := strings.TrimSuffix(absolutePath, "/"+m.Command)
-
+	dir := filepath.Dir(bin)
 	return m.InstallTo(path, dir)
 }
 
