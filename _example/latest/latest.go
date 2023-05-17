@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/apex/log"
-	"github.com/kierdavis/ansi"
 
 	update "github.com/zan8in/goupdate"
 	"github.com/zan8in/goupdate/progress"
@@ -17,16 +16,16 @@ func init() {
 }
 
 func main() {
-	ansi.HideCursor()
-	defer ansi.ShowCursor()
+	// ansi.HideCursor()
+	// defer ansi.ShowCursor()
 
 	// update polls(1) from tj/gh-polls on github
 	m := &update.Manager{
-		Command: "polls",
+		Command: "afrog.exe",
 		Store: &github.Store{
-			Owner:   "tj",
-			Repo:    "gh-polls",
-			Version: "0.0.3",
+			Owner:   "zan8in",
+			Repo:    "afrog",
+			Version: "2.3.1",
 		},
 	}
 
@@ -46,7 +45,7 @@ func main() {
 	latest := releases[0]
 
 	// find the tarball for this system
-	a := latest.FindTarball(runtime.GOOS, runtime.GOARCH)
+	a := latest.FindZip(runtime.GOOS, runtime.GOARCH)
 	if a == nil {
 		log.Info("no binary for your system")
 		return

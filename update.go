@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -62,40 +61,42 @@ func (m *Manager) InstallTo(path, dir string) error {
 		return errors.Wrap(err, "opening tarball")
 	}
 
-	err = unpackit.Unpack(f, dir)
+	tempdir := filepath.Join(dir, "tmp")
+	err = unpackit.Unpack(f, tempdir)
 	if err != nil {
 		f.Close()
 		return errors.Wrap(err, "unpacking tarball")
 	}
+	defer os.RemoveAll(tempdir)
 
 	if err := f.Close(); err != nil {
 		return errors.Wrap(err, "closing tarball")
 	}
 
-	bin := filepath.Join(path, m.Command)
+	latestBinary := filepath.Join(tempdir, m.Command)
 
-	if err := os.Chmod(bin, 0755); err != nil {
+	if err := os.Chmod(latestBinary, 0755); err != nil {
 		return errors.Wrap(err, "chmod")
 	}
 
-	dst := filepath.Join(dir, m.Command)
-	tmp := dst + ".tmp"
+	currentBinary := filepath.Join(dir, m.Command)
+	latestBinaryTmp := currentBinary + ".tmp"
 
-	log.Debugf("copy %q to %q", bin, tmp)
-	if err := copyFile(tmp, bin); err != nil {
+	log.Debugf("copy %q to %q", latestBinary, latestBinaryTmp)
+	if err := copyFile(latestBinaryTmp, latestBinary); err != nil {
 		return errors.Wrap(err, "copying")
 	}
 
 	if runtime.GOOS == "windows" {
-		old := dst + ".old"
-		log.Debugf("windows workaround renaming %q to %q", dst, old)
-		if err := os.Rename(dst, old); err != nil {
+		old := currentBinary + ".old"
+		log.Debugf("windows workaround renaming %q to %q", currentBinary, old)
+		if err := os.Rename(currentBinary, old); err != nil {
 			return errors.Wrap(err, "windows renaming")
 		}
 	}
 
-	log.Debugf("renaming %q to %q", tmp, dst)
-	if err := os.Rename(tmp, dst); err != nil {
+	log.Debugf("renaming %q to %q", latestBinaryTmp, currentBinary)
+	if err := os.Rename(latestBinaryTmp, currentBinary); err != nil {
 		return errors.Wrap(err, "renaming")
 	}
 
@@ -104,12 +105,16 @@ func (m *Manager) InstallTo(path, dir string) error {
 
 // Install binary to replace the current version.
 func (m *Manager) Install(path string) error {
-	bin, err := exec.LookPath("./" + m.Command)
+	// bin, err := exec.LookPath(m.Command) // 获取当前程序的绝对路径
+	// if err != nil {
+	// 	return errors.Wrapf(err, "looking up path of %q", m.Command)
+	// }
+
+	// dir := filepath.Dir(bin)
+	dir, err := getExecutablePath()
 	if err != nil {
 		return errors.Wrapf(err, "looking up path of %q", m.Command)
 	}
-
-	dir := filepath.Dir(bin)
 	return m.InstallTo(path, dir)
 }
 
@@ -230,4 +235,33 @@ func copyFile(dst, src string) (err error) {
 	}
 
 	return
+}
+
+func getExecutablePath() (string, error) {
+	exePath, err := os.Executable()
+	if err != nil {
+		return exePath, err
+	}
+
+	// 检查可执行文件是否存在
+	_, err = os.Stat(exePath)
+	if os.IsNotExist(err) {
+		// 可执行文件不存在，采取适当的处理措施
+		// 例如记录错误信息或提供备用路径
+		return exePath, err
+	}
+
+	// 处理相对路径
+	if !filepath.IsAbs(exePath) {
+		exePath, err = filepath.Abs(exePath)
+		if err != nil {
+			// 处理转换为绝对路径时的错误
+			return exePath, err
+		}
+	}
+
+	// 获取可执行文件所在目录的绝对路径
+	exeDir := filepath.Dir(exePath)
+
+	return exeDir, err
 }
