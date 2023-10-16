@@ -3,10 +3,13 @@ package github
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/google/go-github/github"
 	update "github.com/zan8in/goupdate"
+	"github.com/zan8in/goupdate/progress"
 )
 
 // Store is the store implementation.
@@ -14,6 +17,68 @@ type Store struct {
 	Owner   string
 	Repo    string
 	Version string
+}
+
+type GithubResult struct {
+	Status        int // update success = 1; have latest version = 2;
+	LatestVersion string
+}
+
+// 更新最新版本
+// owner = zan8in
+// repo = afrog
+// version = 2.8.8 当前版本
+func Update(owner, repo, version string) (*GithubResult, error) {
+	var (
+		result = &GithubResult{}
+		err    error
+	)
+
+	m := &update.Manager{
+		Command: repo + ".exe",
+		Store: &Store{
+			Owner:   owner,
+			Repo:    repo,
+			Version: version,
+		},
+	}
+
+	// fetch the new releases
+	releases, err := m.LatestReleases()
+	if err != nil {
+		return result, fmt.Errorf("error fetching releases: %s", err)
+	}
+
+	// no updates
+	if len(releases) == 0 {
+		result.Status = 2
+		return result, nil
+	}
+
+	// latest release
+	latest := releases[0]
+
+	// find the tarball for this system
+	a := latest.FindZip(runtime.GOOS, runtime.GOARCH)
+	if a == nil {
+		return result, fmt.Errorf("no binary for your system")
+	}
+
+	// download tarball to a tmp dir
+	tarball, err := a.DownloadProxy(progress.Reader)
+	if err != nil {
+		return result, fmt.Errorf("error downloading: %s", err)
+	}
+
+	// install it
+	if err := m.Install(tarball); err != nil {
+		return result, fmt.Errorf("error installing: %s", err)
+	}
+
+	// gologger.Info().Msgf("Successfully updated to %s %s\n", repo, version)
+	result.LatestVersion = version
+	result.Status = 1
+	return result, nil
 }
 
 // GetRelease returns the specified release or ErrNotFound.

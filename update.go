@@ -5,7 +5,6 @@ package goupdate
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/c4milo/unpackit"
 	"github.com/pkg/errors"
+	"github.com/zan8in/gologger"
 )
 
 // Proxy is used to proxy a reader, for example
@@ -46,15 +45,16 @@ type Release struct {
 
 // Asset represents a project release asset.
 type Asset struct {
-	Name      string // Name of the asset.
-	Size      int    // Size of the asset.
-	URL       string // URL of the asset.
-	Downloads int    // Downloads count.
+	Name          string // Name of the asset.
+	Size          int    // Size of the asset.
+	URL           string // URL of the asset.
+	Downloads     int    // Downloads count.
+	LatestVersion string
 }
 
 // InstallTo binary to the given dir.
 func (m *Manager) InstallTo(path, dir string) error {
-	log.Debugf("unpacking %q", path)
+	gologger.Debug().Msgf("unpacking %q", path)
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -82,20 +82,20 @@ func (m *Manager) InstallTo(path, dir string) error {
 	currentBinary := filepath.Join(dir, m.Command)
 	latestBinaryTmp := currentBinary + ".tmp"
 
-	log.Debugf("copy %q to %q", latestBinary, latestBinaryTmp)
+	gologger.Debug().Msgf("copy %q to %q", latestBinary, latestBinaryTmp)
 	if err := copyFile(latestBinaryTmp, latestBinary); err != nil {
 		return errors.Wrap(err, "copying")
 	}
 
 	if runtime.GOOS == "windows" {
 		old := currentBinary + ".old"
-		log.Debugf("windows workaround renaming %q to %q", currentBinary, old)
+		gologger.Debug().Msgf("windows workaround renaming %q to %q", currentBinary, old)
 		if err := os.Rename(currentBinary, old); err != nil {
 			return errors.Wrap(err, "windows renaming")
 		}
 	}
 
-	log.Debugf("renaming %q to %q", latestBinaryTmp, currentBinary)
+	gologger.Debug().Msgf("renaming %q to %q", latestBinaryTmp, currentBinary)
 	if err := os.Rename(latestBinaryTmp, currentBinary); err != nil {
 		return errors.Wrap(err, "renaming")
 	}
@@ -151,12 +151,12 @@ func (a *Asset) Download() (string, error) {
 
 // DownloadProxy the asset to a tmp directory and return its path.
 func (a *Asset) DownloadProxy(proxy Proxy) (string, error) {
-	f, err := ioutil.TempFile(os.TempDir(), "update-")
+	f, err := os.CreateTemp(os.TempDir(), "update-")
 	if err != nil {
 		return "", errors.Wrap(err, "creating temp file")
 	}
 
-	log.Debugf("fetch %q", a.URL)
+	gologger.Debug().Msgf("fetch %q", a.URL)
 	res, err := http.Get(a.URL)
 	if err != nil {
 		return "", errors.Wrap(err, "fetching asset")
@@ -164,7 +164,7 @@ func (a *Asset) DownloadProxy(proxy Proxy) (string, error) {
 
 	kind := res.Header.Get("Content-Type")
 	size, _ := strconv.Atoi(res.Header.Get("Content-Length"))
-	log.Debugf("response %s – %s (%d KiB)", res.Status, kind, size/1024)
+	gologger.Debug().Msgf("response %s – %s (%d KiB)", res.Status, kind, size/1024)
 
 	body := proxy(size, res.Body)
 
@@ -173,7 +173,7 @@ func (a *Asset) DownloadProxy(proxy Proxy) (string, error) {
 		return "", errors.Wrap(err, res.Status)
 	}
 
-	log.Debugf("copy to %q", f.Name())
+	gologger.Debug().Msgf("copy to %q", f.Name())
 	if _, err := io.Copy(f, body); err != nil {
 		body.Close()
 		return "", errors.Wrap(err, "copying body")
@@ -187,7 +187,7 @@ func (a *Asset) DownloadProxy(proxy Proxy) (string, error) {
 		return "", errors.Wrap(err, "closing file")
 	}
 
-	log.Debugf("copied")
+	gologger.Debug().Msgf("copied")
 	return f.Name(), nil
 }
 

@@ -4,21 +4,13 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/apex/log"
-	"github.com/kierdavis/ansi"
-
+	"github.com/zan8in/gologger"
 	update "github.com/zan8in/goupdate"
 	"github.com/zan8in/goupdate/progress"
 	"github.com/zan8in/goupdate/stores/github"
 )
 
-func init() {
-	log.SetLevel(log.DebugLevel)
-}
-
 func main() {
-	ansi.HideCursor()
-	defer ansi.ShowCursor()
 
 	// update polls(1) from tj/gh-polls on github
 	m := &update.Manager{
@@ -33,13 +25,14 @@ func main() {
 	// fetch the target release
 	release, err := m.GetRelease("0.4.5")
 	if err != nil {
-		log.Fatalf("error fetching release: %s", err)
+		gologger.Info().Msgf("error fetching release: %s", err)
+		return
 	}
 
 	// find the tarball for this system
 	a := release.FindTarball(runtime.GOOS, runtime.GOARCH)
 	if a == nil {
-		log.Info("no binary for your system")
+		gologger.Error().Msg("no binary for your system")
 		return
 	}
 
@@ -49,13 +42,15 @@ func main() {
 	// download tarball to a tmp dir
 	tarball, err := a.DownloadProxy(progress.Reader)
 	if err != nil {
-		log.Fatalf("error downloading: %s", err)
+		gologger.Error().Msgf("error downloading: %s", err)
+		return
 	}
 
 	// install it
 	if err := m.Install(tarball); err != nil {
-		log.Fatalf("error installing: %s", err)
+		gologger.Error().Msgf("error installing: %s", err)
+		return
 	}
 
-	fmt.Printf("Updated to %s\n", release.Version)
+	gologger.Info().Msgf("Updated to %s\n", release.Version)
 }
