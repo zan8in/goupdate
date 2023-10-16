@@ -22,5 +22,4 @@ func main() {
 		}
 	}
 
-	// gologger.Info().Msgf("Successfully updated to %s %s\n", repo, version)
 }
