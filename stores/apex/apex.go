@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/tj/go/http/request"
 	update "github.com/zan8in/goupdate"
 )
 
@@ -88,7 +87,7 @@ func (s *Store) releases() (all []*update.Release, err error) {
 	defer res.Body.Close()
 
 	if res.StatusCode >= 400 {
-		return nil, request.Error(res.StatusCode)
+		return nil, errors.Errorf("response status code is %d", res.StatusCode)
 	}
 
 	var releases []*Release
