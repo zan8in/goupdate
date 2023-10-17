@@ -13,6 +13,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+//https://gitee.com/api/v5/swagger#/getV5ReposOwnerRepoStargazers?ex=no
+
 type Store struct {
 	Owner   string
 	Repo    string
